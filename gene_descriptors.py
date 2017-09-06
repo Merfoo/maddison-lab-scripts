@@ -14,7 +14,8 @@ def get_primers(primers_file_path):
             name = row[0]
 
             if name:
-                primers[name.upper()] = { "gene_name": row[1], "type": row[2] }
+                name = name.upper()
+                primers[name] = { "gene_name": xstr(row[1]).upper(), "type": row[2] }
 
     return primers
     
@@ -50,7 +51,7 @@ def get_chromatogram_primer(chromatogram_filename):
     primer_name_match = re.search("_.+?_(?P<primer_name>.+?)_", chromatogram_filename)
 
     if primer_name_match:
-        return primer_name_match.group("primer_name")
+        return primer_name_match.group("primer_name").upper()
     else:
         return None
 
@@ -70,7 +71,7 @@ def get_sequence_gene_name(sequence_filename):
     gene_name_match = re.search("_&g(?P<gene_name>.+?)_", sequence_filename)
 
     if gene_name_match:
-        return gene_name_match.group("gene_name")
+        return gene_name_match.group("gene_name").upper()
     else:
         return None
 
@@ -84,7 +85,7 @@ def get_sequence_primers(sequence_filename, chromatogram_filenames, primers):
             primer_name = get_chromatogram_primer(chromatogram_filename)
 
             if primer_name and primers.has_key(primer_name.upper()):
-                primer = primers[primer_name.upper()]
+                primer = primers[primer_name]
 
                 if primer["gene_name"] == sequence_gene_name:
                     if primer["type"] == "F":
@@ -141,7 +142,21 @@ def save_sequences_file(sequences, filename):
         file_content += ", ".join(sequence["forward_primers"]) + "\t"
         file_content += ", ".join(sequence["reverse_primers"]) + "\n"
 
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
+        f.write(file_content)
+
+def save_genes_file(genes, filename):
+    file_content = ""
+    file_content += "gene_name\t"
+    file_content += "forward_primers\t"
+    file_content += "reverse_primers\n"
+
+    for gene_name, gene in genes.iteritems():
+        file_content += xstr(gene_name) + "\t"
+        file_content += ", ".join(gene["forward_primers"]) + "\t"
+        file_content += ", ".join(gene["reverse_primers"]) + "\n"
+
+    with open(filename, "w") as f:
         f.write(file_content)
 
 def main(sequences_folder_path, chromatograms_folder_path, primers_file_path):
@@ -150,6 +165,7 @@ def main(sequences_folder_path, chromatograms_folder_path, primers_file_path):
     sequences = get_sequences(sequences_folder_path, chromatogram_filenames, primers)
     genes = get_genes(sequences)
     save_sequences_file(sequences, "sequences.csv")
+    save_genes_file(genes, "genes.csv")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
