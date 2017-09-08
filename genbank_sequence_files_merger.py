@@ -1,42 +1,53 @@
 # Merges multiple GenBank Sequence files into one csv file
 import os
-import sys
+import argparse
 
 def get_sequence(filename):
-	with open(filename, 'r') as f:
-		return f.read().split('\n')[1]
+    with open(filename, 'r') as f:
+        return f.read().split('\n')[1]
 
-	return ""
+    return ""
 
 def save_file(filename, file_content):
-	with open(filename, 'w') as f:
-		f.write(file_content)
+    with open(filename, 'w') as f:
+        f.write(file_content)
 
-def main(argv):
-	if len(argv) < 2:
-		print("Filename for csv file containing GenBank Sequences must be provided!")
-		return
+def main(filename, sequences_folder_path):
+    file_headers = ["filename", "file_content"]
+    file_content = ""
 
-	new_filename = argv[1]
-	file_headers = ["filename", "file_content"]
-	file_content = ""
+    for header in file_headers:
+        file_content += header + "\t"
 
-	for header in file_headers:
-		file_content += header + "\t"
+    file_content += "\n"
 
-	file_content += "\n"
+    for sequence_filename in os.listdir(sequences_folder_path):
+        if sequence_filename[0] != "&":
+            continue
+        
+        sequence_file_path = os.path.join(sequences_folder_path, sequence_filename)
+        print(sequence_filename)
 
-	for filename in os.listdir(os.getcwd()):
-		if filename[0] != "&":
-			continue
-		
-		print(filename)
+        file_content += sequence_filename + "\t"
+        file_content += get_sequence(sequence_file_path) + "\t"
+        file_content += "\n"
 
-		file_content += filename + "\t"
-		file_content += get_sequence(filename) + "\t"
-		file_content += "\n"
-
-	save_file(new_filename, file_content)
+    save_file(filename, file_content)
 
 if __name__ == "__main__":
-	main(sys.argv)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--filename")
+    parser.add_argument("--sequences_folder_path")
+    args = parser.parse_args()
+
+    filename = "sequences.csv"
+    sequences_folder_path = os.getcwd()
+
+    if args.filename:
+        filename = args.filename
+
+    if args.sequences_folder_path:
+        sequences_folder_path = args.sequences_folder_path
+
+    main(filename, sequences_folder_path)
+    

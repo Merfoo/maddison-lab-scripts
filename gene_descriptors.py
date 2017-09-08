@@ -57,7 +57,7 @@ def get_chromatogram_primer(chromatogram_filename):
 
 def get_sequence_dna_number(sequence_filename):
     # Example sequence filename
-    # &vDRMDNA0000_&g18S_&pPUB001_&aAF002790_&nPericompsus laetulus.fas
+    # &iSEQID00000349_&vDRMDNA1216_&g28S_&pPUB003_&nLionepha_chintimini_OR_4144
     dna_number_match = re.search("&vDRMDNA(?P<dna_number>\d+)", sequence_filename)
 
     if dna_number_match:
@@ -67,11 +67,21 @@ def get_sequence_dna_number(sequence_filename):
 
 def get_sequence_gene_name(sequence_filename):
     # Example sequence filename
-    # &vDRMDNA0000_&g18S_&pPUB001_&aAF002790_&nPericompsus laetulus.fas
+    # &iSEQID00000349_&vDRMDNA1216_&g28S_&pPUB003_&nLionepha_chintimini_OR_4144
     gene_name_match = re.search("_&g(?P<gene_name>.+?)_", sequence_filename)
 
     if gene_name_match:
         return gene_name_match.group("gene_name").upper()
+    else:
+        return None
+
+def get_sequence_identifier(sequence_filename):
+    # Example sequence filename
+    # &iSEQID00000349_&vDRMDNA1216_&g28S_&pPUB003_&nLionepha_chintimini_OR_4144
+    id_match = re.search("&i(?P<id>SEQID\d+)", sequence_filename)
+
+    if id_match:
+        return id_match.group("id")
     else:
         return None
 
@@ -103,6 +113,7 @@ def get_sequences(sequences_folder_path, chromatogram_filenames, primers):
         sequence.update(get_sequence_primers(sequence_filename, chromatogram_filenames, primers))
         sequence["dna_number"] = get_sequence_dna_number(sequence_filename)
         sequence["gene_name"] = get_sequence_gene_name(sequence_filename)
+        sequence["identifier"] = get_sequence_identifier(sequence_filename)
         sequences.append(sequence)
 
     return sequences
@@ -131,12 +142,14 @@ def xstr(s):
 
 def save_sequences_file(sequences, filename):
     file_content = ""
+    file_content += "identifier\t"
     file_content += "dna_number\t"
     file_content += "gene_name\t"
     file_content += "forward_primers\t"
     file_content += "reverse_primers\n"
 
     for sequence in sequences:
+        file_content += sequence["identifier"] + "\t"
         file_content += sequence["dna_number"] + "\t"
         file_content += xstr(sequence["gene_name"]) + "\t"
         file_content += ", ".join(sequence["forward_primers"]) + "\t"
@@ -164,7 +177,7 @@ def main(sequences_folder_path, chromatograms_folder_path, primers_file_path):
     primers = get_primers(primers_file_path)
     sequences = get_sequences(sequences_folder_path, chromatogram_filenames, primers)
     genes = get_genes(sequences)
-    save_sequences_file(sequences, "sequences.csv")
+    save_sequences_file(sequences, "sequence_relationships.csv")
     save_genes_file(genes, "genes.csv")
 
 if __name__ == "__main__":
